@@ -13,7 +13,6 @@ const notes: Note[]= []
 
 
 app.get('/note/:id', function (req: Request, res: Response) {
-  res.send('GET Hello World')
   notes.forEach(el=>{
     if(el.id=== +req.params.id){
       res.status(200).send(el);
@@ -29,7 +28,7 @@ app.post('/note', function (req: Request, res: Response) {
     content:"Zrob zadanie"
   }
   notes.push(note)
-  res.sendStatus(200).send('Notatka dodana.');
+  res.status(200).send('Notatka dodana.');
 
   //res.sendStatus(400).send("Zła zawartość.")
 })
