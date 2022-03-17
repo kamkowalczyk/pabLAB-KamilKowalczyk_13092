@@ -13,34 +13,54 @@ const notes: Note[]= []
 
 
 app.get('/note/:id', function (req: Request, res: Response) {
-  notes.forEach(el=>{
-    if(el.id=== +req.params.id){
-      res.status(200).send(el);
-    }
-  });
- 
-  //res.sendStatus(404).send("Nie można pobrać elementu.")
-})
-app.post('/note', function (req: Request, res: Response) {
-  const note =  {
-    id:1,
-    title:"Notatka1",
-    content:"Zrob zadanie"
+  const note = notes.find(n => n.id === req.body.id)
+  if(note === undefined) {
+    res.status(404).send('Notatka nie isnieje.')
+  } else {
+    res.status(200).send(note)
   }
-  notes.push(note)
-  res.status(200).send('Notatka dodana.');
+})
 
-  //res.sendStatus(400).send("Zła zawartość.")
+app.post('/note', function (req: Request, res: Response) {
+  const note: Note = req.body
+  if(note.title === undefined) {
+      res.status(400).send('Podaj tytuł notatki.')
+  } else if(note.content === undefined) {
+      res.status(400).send('Podaj content notatki. ')
+  } else {
+      note.id = Date.now()
+      notes.push(note)
+      res.status(201).send(note)
+  }
 })
+
 app.put('/note/:id', function (req: Request, res: Response) {
-  console.log(req.body) // e.x. req.body.title 
-  res.sendStatus(204).send('Zaaktualizowano dane.');
-  //res.sendStatus(404).send('Nie można zaktualizować danych.');
+  const note: Note = req.body
+  if(note.title === undefined) {
+      res.status(400).send('Podaj tytuł notatki.')
+  } else if(note.content === undefined) {
+      res.status(400).send('Podaj content notatki.')
+  } else if(note.id === undefined) {
+      res.status(400).send('Podaj id.')
+  } else {
+      let newNote = notes.find(n => n.id === note.id)
+      if(newNote === undefined) {
+        res.status(404).send('Notatka nie isnieje.')
+      } else
+      newNote = note;
+      res.status(201).send(note)
+  }
 })
-app.delete('/note/:id', function (req: Request, res: Response) {
-  console.log(req.body) // e.x. req.body.title 
-  res.sendStatus(204).send('Usunięto dane.');
-  // res.sendStatus(400).send('Nie można usunąć danych.');
+
+app.delete('/note/:id', function (req: Request, res: Response){
+    const note = notes.find(n => n.id === req.body.id)
+    if(note === undefined) {
+        res.status(400).send('Notatka nie isnieje.')
+    }
+    else {
+        notes.splice(req.body.id, 1)
+        res.status(204).send(note)
+    }
 })
 
 app.listen(3000)
