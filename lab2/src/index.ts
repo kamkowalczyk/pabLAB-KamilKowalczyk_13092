@@ -13,20 +13,20 @@ const notes: Note[]= []
 
 
 app.get('/note/:id', function (req: Request, res: Response) {
-  const note = notes.find(n => n.id === req.body.id)
+  const note = notes.find(el => el.id === req.body.id)
   if(note === undefined) {
-    res.status(404).send('Notatka nie isnieje.')
+    res.status(404).send('Note does not exist')
   } else {
     res.status(200).send(note)
   }
 })
 
 app.post('/note', function (req: Request, res: Response) {
-  const note: Note = req.body
+  const note = req.body
   if(note.title === undefined) {
-      res.status(400).send('Podaj tytuł notatki.')
+      res.status(400).send('Note title is undefined')
   } else if(note.content === undefined) {
-      res.status(400).send('Podaj content notatki. ')
+      res.status(400).send('Note content is undefined')
   } else {
       note.id = Date.now()
       notes.push(note)
@@ -37,15 +37,15 @@ app.post('/note', function (req: Request, res: Response) {
 app.put('/note/:id', function (req: Request, res: Response) {
   const note: Note = req.body
   if(note.title === undefined) {
-      res.status(400).send('Podaj tytuł notatki.')
+      res.status(400).send('Note title is undefined')
   } else if(note.content === undefined) {
-      res.status(400).send('Podaj content notatki.')
+      res.status(400).send('Note content is undefined')
   } else if(note.id === undefined) {
-      res.status(400).send('Podaj id.')
+      res.status(400).send('Note id is undefined')
   } else {
-      let newNote = notes.find(n => n.id === note.id)
+      let newNote = notes.find(el => el.id === note.id)
       if(newNote === undefined) {
-        res.status(404).send('Notatka nie isnieje.')
+        res.status(404).send('Note does not exist')
       } else
       newNote = note;
       res.status(201).send(note)
@@ -53,9 +53,9 @@ app.put('/note/:id', function (req: Request, res: Response) {
 })
 
 app.delete('/note/:id', function (req: Request, res: Response){
-    const note = notes.find(n => n.id === req.body.id)
+    const note = notes.find(el => el.id === req.body.id)
     if(note === undefined) {
-        res.status(400).send('Notatka nie isnieje.')
+        res.status(400).send('Note does not exist')
     }
     else {
         notes.splice(req.body.id, 1)
