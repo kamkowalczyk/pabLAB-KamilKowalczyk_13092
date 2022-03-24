@@ -4,6 +4,7 @@ import {Request, Response} from 'express'
 import {Note} from './note'
 import {Tag} from './tag'
 import fs from 'fs';
+var os = require("os");
 
 const app = express()
 
@@ -40,16 +41,21 @@ let tags: Tag[] = [{
 
 
 
+
 async function  readStorage(): Promise<void> {
   try {
       const data = await fs.promises.readFile('./storeFile.json', 'utf-8');
+    
   } catch (err) {
       console.log(err)
+      
   }
 }
  async function updateStorage(data:Note): Promise<void> {
   try {
-      await fs.promises.writeFile('./storeFile.json', JSON.stringify(data));
+    
+     await fs.promises.writeFile('./storeFile.json', JSON.stringify(data));
+     
   } catch (err) {
       console.log(err)
   }
@@ -74,7 +80,7 @@ app.get('/notes', async function (req: Request, res: Response) {
 })
 app.post('/note',  async function (req: Request, res: Response) {
   const note = req.body
-  
+  await readStorage();
   if(note.title === undefined) {
       res.status(400).send('Note title is undefined')
   } else if(note.content === undefined) {
