@@ -69,13 +69,10 @@ app.get('/note/:id', async function (req: Request, res: Response) {
 })
 app.get('/notes', async function (req: Request, res: Response) {
    await readStorage();
-
- 
    res.status(200).send(notes);
    
-
 })
-app.post('/note', function (req: Request, res: Response) {
+app.post('/note',  async function (req: Request, res: Response) {
   const note = req.body
   
   if(note.title === undefined) {
@@ -87,10 +84,10 @@ app.post('/note', function (req: Request, res: Response) {
       notes.push(note)
       res.status(201).send(note)
   }
-  updateStorage(note);
+   await updateStorage(note);
 });
 
-app.put('/note/:id', function (req: Request, res: Response) {
+app.put('/note/:id', async function (req: Request, res: Response) {
   
   const note: Note = req.body
   if(note.title === undefined) {
@@ -108,10 +105,10 @@ app.put('/note/:id', function (req: Request, res: Response) {
       res.status(201).send(note)
       }
   }
-  updateStorage(note);
+  await updateStorage(note);
 });
 
-app.delete('/note/:id', function (req: Request, res: Response){
+app.delete('/note/:id', async function (req: Request, res: Response){
   
     const note = notes.find(el => el.id === req.body.id)
     if(note === undefined) {
@@ -120,6 +117,7 @@ app.delete('/note/:id', function (req: Request, res: Response){
     else {
         notes.splice(req.body.id, 1)
         res.status(204).send(note)
+        await updateStorage(note);
     }
 
 })
@@ -144,19 +142,40 @@ app.get('/tag/:id', function (req: Request, res: Response) {
 })
 
 app.post('/tag', function (req: Request, res: Response) {
-  const tag : Tag = req.body
-  if(tag.id === undefined) {
-      res.status(400).send('Tag id is undefined')
-  } else if(tag.name === undefined) {
-      res.status(400).send('Tag name is undefined')
-  } else {
-      tag.id = Date.now()
-      tags.push(tag)
-      res.status(201).send(tag)
+  if (req.body.name) {
+    const name = req.body.name.toLowerCase();
+    let nameUpper = name.toLowerCase();
+
+    const tagFind = tags.find((name) => name.name === nameUpper)
+    if(tagFind){
+      res.status(404).send("The Note exists.");
+    }
+    else{
+      const tag : Tag = req.body
+      if(tag.id === undefined) {
+          res.status(400).send('Tag id is undefined.')
+      } else if(tag.name === undefined) {
+          res.status(400).send('Tag name is undefined.')
+      } else {
+          tag.id = Date.now()
+          tags.push(tag)
+          res.status(201).send(tag)
+      }
+    }
   }
 });
 app.put('/tag/:id', function (req: Request, res: Response) {
   const tag: Tag = req.body
+  const name = req.body.name.toLowerCase();
+  let nameUpper = name.toLowerCase();
+  nameUpper.toLowerCase();
+  const tagFind = tags.find((name) => name.name === nameUpper)
+  if(tagFind){
+    
+    res.status(400).send('The Tag exists.')
+    return;
+  }
+
   if(tag.name === undefined) {
       res.status(400).send('Tag title is undefined')
   } else if(tag.id === undefined) {
