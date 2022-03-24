@@ -10,8 +10,35 @@ const app = express()
 app.use(express.json())
 
 
-const notes: Note[]= []
-const tags: Tag[] = []
+let notes: Note[]= [
+  {
+    title: "a",
+    content: "a",
+    createDate: "16-02-2022",
+
+    tags: [{ id: 1, name: "a" }],
+    id: 1,
+  },
+  {
+    title: "b",
+    content: "b",
+    createDate: "17-02-2022",
+    tags: [{ id: 2, name: "b" }],
+    id: 2,
+  },
+]
+let tags: Tag[] = [{
+  id: 1,
+  name: "a",
+},
+{
+  id: 2,
+  name: "b",
+},
+]
+
+
+
 
 async function  readStorage(): Promise<void> {
   try {
@@ -42,15 +69,10 @@ app.get('/note/:id', async function (req: Request, res: Response) {
 })
 app.get('/notes', async function (req: Request, res: Response) {
    await readStorage();
-  notes.forEach(note => {
-    if(note.id === undefined)
-    {
-      res.status(400).send("Note does not exist");
-    }
-    else {
-      res.status(200).send(note);
-    }
-  });
+
+ 
+   res.status(200).send(notes);
+   
 
 })
 app.post('/note', function (req: Request, res: Response) {
@@ -104,8 +126,15 @@ app.delete('/note/:id', function (req: Request, res: Response){
 
 //Tags
 
-app.get('/tag', function (req: Request, res: Response) {
+app.get('/tags', function (req: Request, res: Response) {
+
+  res.status(200).send(tags);
+
+})
+
+app.get('/tag/:id', function (req: Request, res: Response) {
   const tag = tags.find(el => el.id === req.body.id)
+  
   if(tag === undefined) {
     res.status(404).send('Tag does not exist')
   } else {
@@ -113,28 +142,16 @@ app.get('/tag', function (req: Request, res: Response) {
   }
   readStorage();
 })
-app.get('/tags', function (req: Request, res: Response) {
 
-  tags.forEach(tag => {
-    if(tag.id == null)
-    {
-      res.status(404).send("Tag does not exist");
-    }
-    else {
-      res.status(200).send(tag);
-    }
-    readStorage();
-  });
-})
 app.post('/tag', function (req: Request, res: Response) {
-  const tag = req.body
-  if(tag.title === undefined) {
-      res.status(400).send('Note title is undefined')
-  } else if(tag.content === undefined) {
-      res.status(400).send('Note content is undefined')
+  const tag : Tag = req.body
+  if(tag.id === undefined) {
+      res.status(400).send('Tag id is undefined')
+  } else if(tag.name === undefined) {
+      res.status(400).send('Tag name is undefined')
   } else {
       tag.id = Date.now()
-      notes.push(tag)
+      tags.push(tag)
       res.status(201).send(tag)
   }
 });
