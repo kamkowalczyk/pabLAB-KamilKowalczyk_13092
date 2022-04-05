@@ -13,7 +13,7 @@ class Repository{
   public  async updateStorage(updatedData: string): Promise<void> {
     try {
       
-       await fs.promises.writeFile('./storeFile.json', JSON.stringify(updatedData));
+       await fs.promises.writeFile('./storeFile.json', updatedData);
        
     } catch (err) {
         return;

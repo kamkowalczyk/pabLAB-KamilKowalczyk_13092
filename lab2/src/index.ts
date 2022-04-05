@@ -1,17 +1,19 @@
 import express from 'express'
 import {Request, Response} from 'express'
-import Storage from "../Classes/Data";
+import Storage from "../Classes/Storage";
 import Note from '../Classes/Note';
 import Tag from '../Classes/Tag';
 import Repository from "../Classes/Repository";
-import Login from '../Classes/Login';
 import jwt from "jsonwebtoken";
-var os = require("os");
+import User from '../Classes/User';
+
+const dotenv = require("dotenv");
+dotenv.config();
 
 const app = express();
 
 const repo: Repository = new Repository();
-const loggedInUser = new Login();
+let loggedInUser = new User();
 const secret = "test"
 
 let storage: Storage;
@@ -27,43 +29,43 @@ repo.readStorage().then((el) => {
 app.use(express.json());
 
 //Notes
-
 app.get("/notes", function (req: Request, res: Response) {
-  if (loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
+  const authData = req.headers.authorization ?? ''
+  if (loggedInUser.IfUserIsAuthorized(authData, secret)) {
     try {
-      res.status(200).send(storage.notes);
+      res.status(200).send(storage.notes.filter(el => loggedInUser.notesIds.includes(el.id ?? 0)));
     } catch (error) {
       res.status(400).send(error);
     }
   } else {
-    res.status(401).send("User is unauthorized")
+    res.status(401).send("Unauthorized user")
   }
   
 });
 
 app.get("/note/:id", function (req: Request, res: Response) {
-  if (loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
-    const note = storage.notes.find((el) => el.id === +req.params.id);
-    
+  const authData = req.headers.authorization ?? ''
+  if (loggedInUser.IfUserIsAuthorized(authData, secret)) {
+    const note = storage.notes.find((el) => el.id === +req.params.id && loggedInUser.notesIds.includes(+req.params.id));
     if (note === undefined) {
       res.status(404).send("Note doesn't exist");
     } else {
       res.status(200).send(note);
     }
   } else {
-    res.status(401).send("User is unauthorized")
+    res.status(401).send("Unauthorized user")
   }
 });
 
 app.post("/note", function (req: Request, res: Response) {
-  if(loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
+  const authData = req.headers.authorization ?? ''
+  if(loggedInUser.IfUserIsAuthorized(authData, secret)) {
     const note: Note = req.body;
     if (note.title === undefined) {
       res.status(400).send("Note title is undefined");
     } else if (note.content === undefined) {
       res.status(400).send("Note content is undefined");
     } else {
-      console.log(note);
       if (note.tags !== undefined) {
         note.tags.forEach((tag) => {
           if (!storage.tags.find((el) => el.name === tag.name)) {
@@ -72,21 +74,24 @@ app.post("/note", function (req: Request, res: Response) {
               name: tag.name,
             };
             storage.tags.push(newTag);
+            loggedInUser.tagsIds.push(newTag.id ?? 0)
           }
         });
       }
       note.id = Date.now();
       storage.notes.push(note);
+      loggedInUser.notesIds.push(note.id);
       res.status(201).send(note);
       repo.updateStorage(JSON.stringify(storage));
     } 
   } else {
-    res.status(401).send("User is unauthorized")
+    res.status(401).send("Unauthorized user")
   }
 });
 
 app.put("/note/:id", function (req: Request, res: Response) {
-  if(loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
+  const authData = req.headers.authorization ?? ''
+  if(loggedInUser.IfUserIsAuthorized(authData, secret)) {
     const note: Note = req.body;
     if (note.title === undefined) {
       res.status(400).send("Note title is undefined");
@@ -103,22 +108,24 @@ app.put("/note/:id", function (req: Request, res: Response) {
       repo.updateStorage(JSON.stringify(storage));
     }
   } else {
-    res.status(401).send("User is unauthorized")
+    res.status(401).send("Unauthorized user")
   }
 });
 
 app.delete("/note/:id", function (req: Request, res: Response) {
-  if(loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
+  const authData = req.headers.authorization ?? ''
+  if(loggedInUser.IfUserIsAuthorized(authData, secret)) {
     const note = storage.notes.find((el) => el.id === +req.params.id);
     if (note === undefined) {
       res.status(400).send("Note doesn't exist");
     } else {
       storage.notes.splice(req.body.id, 1);
+      loggedInUser.notesIds.splice(req.body.id, 1)
       res.status(204).send(note);
       repo.updateStorage(JSON.stringify(storage));
     }
   } else {
-    res.status(401).send("User is unauthorized")
+    res.status(401).send("Unauthorized user")
   }
   
 });
@@ -126,34 +133,36 @@ app.delete("/note/:id", function (req: Request, res: Response) {
 
 
 // Tags
-
 app.get("/tags", function (req: Request, res: Response) {
-  if(loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
+  const authData = req.headers.authorization ?? ''
+  if(loggedInUser.IfUserIsAuthorized(authData, secret)) {
     try {
-      res.status(200).send(storage.tags);
+      res.status(200).send(storage.tags.filter(el => loggedInUser.tagsIds.includes(el.id ?? 0)));
     } catch (error) {
       res.status(400).send(error);
     }
   } else {
-    res.status(401).send("User is unauthorized")
+    res.status(401).send("Unauthorized user")
   }
 });
 
 app.get("/tag/:id", function (req: Request, res: Response) {
-  if(loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
-    const tag = storage.tags.find((el) => el.id === +req.params.id);
+  const authData = req.headers.authorization ?? ''
+  if(loggedInUser.IfUserIsAuthorized(authData, secret)) {
+    const tag = storage.tags.find((el) => el.id === +req.params.id && loggedInUser.tagsIds.includes(+req.params.id));
     if (tag === undefined) {
       res.status(404).send("Tag doesn't exist");
     } else {
       res.status(200).send(tag);
     }
   } else {
-    res.status(401).send("User is unauthorized")
+    res.status(401).send("Unauthorized user")
   }
 });
 
 app.post("/tag", function (req: Request, res: Response) {
-  if(loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
+  const authData = req.headers.authorization ?? ''
+  if(loggedInUser.IfUserIsAuthorized(authData, secret)) {
     const tag: Tag = req.body;
     if (tag.name === undefined) {
       res.status(400).send("Tag name is undefined");
@@ -162,16 +171,18 @@ app.post("/tag", function (req: Request, res: Response) {
     } else {
       tag.id = Date.now();
       storage.tags.push(tag);
+      loggedInUser.tagsIds.push(tag.id ?? 0)
       res.status(201).send(tag);
       repo.updateStorage(JSON.stringify(storage));
     }
   } else {
-    res.status(401).send("User is unauthorized")
+    res.status(401).send("Unauthorized user")
   }
 });
 
 app.put("/tag/:id", function (req: Request, res: Response) {
-  if(loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
+  const authData = req.headers.authorization ?? ''
+  if(loggedInUser.IfUserIsAuthorized(authData, secret)) {
     const tag: Tag = req.body;
     if (tag.name === undefined) {
       res.status(400).send("Tag name is undefined");
@@ -180,41 +191,51 @@ app.put("/tag/:id", function (req: Request, res: Response) {
     } else if (tag.id === undefined) {
       res.status(400).send("Tag id is undefined");
     } else {
-      let oldTag = storage.tags.find((el) => el.id === tag.id);
-      if (oldTag === undefined) {
+      let newTag = storage.tags.find((el) => el.id === tag.id);
+      if (newTag === undefined) {
         res.status(404).send("Tag doesn't exist");
-      } else oldTag = tag;
+      } else newTag = tag;
       res.status(201).send(tag);
       repo.updateStorage(JSON.stringify(storage));
     }
   } else {
-    res.status(401).send("User is unauthorized")
+    res.status(401).send("Unauthorized user")
   }
 });
 
 app.delete("/tag/:id", function (req: Request, res: Response) {
-  if(loggedInUser.IfUserIsAuthorized(req.headers.authorization!, secret)) {
+  const authData = req.headers.authorization ?? ''
+  if(loggedInUser.IfUserIsAuthorized(authData, secret)) {
     const tag = storage.tags.find((el) => el.id === +req.params.id);
     if (tag === undefined) {
       res.status(400).send("Tag doesn't exist");
     } else {
       storage.tags.splice(req.body.id, 1);
+      loggedInUser.tagsIds.splice(req.body.id, 1)
       res.status(204).send(tag);
       repo.updateStorage(JSON.stringify(storage));
     }
   }
 });
 
+// Login
+
 app.post("/login", function(req: Request, res: Response) {
-  const user: Login = req.body
+  const user: User = req.body
   if(!user.login || !user.password) {
     res.status(401).send("Login or password is undefined")
   }
-  const payload = user.login
+  user.id = Date.now();
+  const payload = user.id.toString()
+  loggedInUser = new User();
+  loggedInUser.id = user.id
   loggedInUser.login = user.login
   loggedInUser.password = user.password
   const token = jwt.sign(payload, secret)
   res.status(200).send(token)
+  storage.users.push(user);
+  repo.updateStorage(JSON.stringify(storage));
+  
 })
 
 app.listen(3000);
