@@ -2,14 +2,15 @@
     "notes": [
         {
             "title": "test",
-            "content": "My first test",
+            "content": "My second test",
             "createDate": "22-03-2022",
             "tags": [
                 {
                     "name": "test"
                 }
             ],
-            "id": 1649078067229
+            "isPrivate": "false",
+            "id": 1649262073958
         },
         {
             "title": "test",
@@ -20,23 +21,13 @@
                     "name": "test"
                 }
             ],
-            "id": 1649078476662
-        },
-        {
-            "title": "test",
-            "content": "My first test",
-            "createDate": "22-03-2022",
-            "tags": [
-                {
-                    "name": "test"
-                }
-            ],
-            "id": 1649078722059
+            "isPrivate": "true",
+            "id": 1649262088807
         }
     ],
     "tags": [
         {
-            "id": 1649078067229,
+            "id": 1649262073958,
             "name": "test"
         }
     ],
@@ -44,32 +35,14 @@
         {
             "login": "User1",
             "password": "logintest",
-            "id": 1649078729691
-        },
-        {
-            "login": "User23313121312",
-            "password": "log3123123intest",
-            "id": 1649159129109
-        },
-        {
-            "login": "User23313121312",
-            "password": "log3123123intest",
-            "id": 1649159444228
-        },
-        {
-            "login": "User23313121312",
-            "password": "log3123123intest",
-            "id": 1649159753879
-        },
-        {
-            "login": "User1",
-            "password": "logintest",
-            "id": 1649159821183
-        },
-        {
-            "login": "User1",
-            "password": "logintest",
-            "id": 1649159829608
+            "notesIds": [
+                1649262073958,
+                1649262088807
+            ],
+            "tagsIds": [
+                1649262073958
+            ],
+            "id": 1649262073958
         }
     ]
 }

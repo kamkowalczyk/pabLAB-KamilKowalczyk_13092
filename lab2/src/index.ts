@@ -7,8 +7,6 @@ import Repository from "../Classes/Repository";
 import jwt from "jsonwebtoken";
 import User from '../Classes/User';
 
-const dotenv = require("dotenv");
-dotenv.config();
 
 const app = express();
 
@@ -29,14 +27,10 @@ repo.readStorage().then((el) => {
 app.use(express.json());
 
 //Notes
-app.get("/notes", function (req: Request, res: Response) {
+app.get("/note/list", function (req: Request, res: Response) {
   const authData = req.headers.authorization ?? ''
   if (loggedInUser.IfUserIsAuthorized(authData, secret)) {
-    try {
-      res.status(200).send(storage.notes.filter(el => loggedInUser.notesIds.includes(el.id ?? 0)));
-    } catch (error) {
-      res.status(400).send(error);
-    }
+   getNotes(res, false, loggedInUser);
   } else {
     res.status(401).send("Unauthorized user")
   }
@@ -129,11 +123,34 @@ app.delete("/note/:id", function (req: Request, res: Response) {
   }
   
 });
+app.get("/note/list/user/:userName", function (req: Request, res: Response) {
+  const user = storage.users.find(a => a.login === req.params.userName)
+  if(user) {
+    res.status(200).send(storage.users)
+    getNotes(res, true, user);
+  } else {
+    res.status(404).send("User name not exist")
+  }
 
-
+})
+function getNotes(res: Response, onlyPublicNotes: boolean, user:User){
+  try {
+    let notes: Note[]= [];
+    if(onlyPublicNotes){
+      notes= storage.notes.filter(el=> user.notesIds.includes(el.id ??0))
+      notes= notes.filter(el=>el.isPrivate ===true);
+    }
+    else{
+      notes = storage.notes.filter(el => user.notesIds.includes(el.id ??0))
+    }
+    res.status(200).send(notes);
+  } catch (error) {
+    res.status(400).send(error)
+  }
+}
 
 // Tags
-app.get("/tags", function (req: Request, res: Response) {
+app.get("/tag/list", function (req: Request, res: Response) {
   const authData = req.headers.authorization ?? ''
   if(loggedInUser.IfUserIsAuthorized(authData, secret)) {
     try {
@@ -225,17 +242,28 @@ app.post("/login", function(req: Request, res: Response) {
   if(!user.login || !user.password) {
     res.status(401).send("Login or password is undefined")
   }
-  user.id = Date.now();
-  const payload = user.id.toString()
   loggedInUser = new User();
-  loggedInUser.id = user.id
-  loggedInUser.login = user.login
-  loggedInUser.password = user.password
-  const token = jwt.sign(payload, secret)
-  res.status(200).send(token)
-  storage.users.push(user);
-  repo.updateStorage(JSON.stringify(storage));
-  
+  const existingUser = storage.users.find(el => el.login)
+  if(existingUser){
+    if(existingUser.password === user.password) {
+      loggedInUser = existingUser
+    } else {
+      res.status(400).send("Wrong password")
+    }
+  } else {
+    loggedInUser.id = Date.now();
+    loggedInUser.login = user.login
+    loggedInUser.password = user.password
+    loggedInUser.notesIds = []
+    loggedInUser.tagsIds = []
+    storage.users.push(loggedInUser)
+  }
+  if(loggedInUser.id) {
+    const payload = loggedInUser.id.toString()
+    const token = jwt.sign(payload, secret)
+    res.status(200).send(token)
+    repo.updateStorage(JSON.stringify(storage));
+  }  
 })
 
 app.listen(3000);
